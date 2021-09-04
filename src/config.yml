@@ -1,0 +1,23 @@
+initial_investment: 83000
+
+# income
+yearly_income: 125000
+tax_rate: .185
+
+# costs; one of monthly_investments or (monthly_expenses, tax_rate, yearly_income) must be provided
+monthly_expenses: 3000
+monthly_expenses_flex: 1000 # amount of under/overestimating monthly expenses
+
+monthly_investments:
+  - 4000
+  - 5000
+  - 6000
+
+compound_interval: .1
+years: 10
+
+rates:
+  - .1
+  - .2
+  - .4
+  - .6
