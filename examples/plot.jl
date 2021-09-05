@@ -1,6 +1,4 @@
 include("../src/income_charts.jl")
-import .Growth
-
 import Configurations
 import YAML
 import Printf
@@ -32,9 +30,9 @@ Plots.plotly()
 # helpers
 tdy = Dates.today()
 
-weekly_deposit(amt::Real; start=tdy) = Growth.RegularDeposit(amt, start, stop+Dates.Year(1000), Dates.Week(1))
-monthly_deposit(amt::Real; start=tdy) = Growth.RegularDeposit(amt, start, start+Dates.Year(1000), Dates.Month(1))
-yearly_deposit(amt::Real; start=tdy) = Growth.RegularDeposit(amt, start, stop+Dates.Year(1000), Dates.Year(1))
+weekly_deposit(amt::Real; start=tdy) = RegularDeposit(amt, start, stop+Dates.Year(1000), Dates.Week(1))
+monthly_deposit(amt::Real; start=tdy) = RegularDeposit(amt, start, start+Dates.Year(1000), Dates.Month(1))
+yearly_deposit(amt::Real; start=tdy) = RegularDeposit(amt, start, stop+Dates.Year(1000), Dates.Year(1))
 
 struct ForecastTimeRange
 	start::Dates.DateTime
@@ -46,9 +44,9 @@ forecastRange = ForecastTimeRange(tdy, tdy+Dates.Year(10))
 
 # forecast budgets
 budgets = [
-	   Growth.Budget("3000 per month", tdy, [monthly_deposit(3000, start=tdy+Dates.Week(1)), Growth.Deposit(100*10^3, tdy)])
-	   Growth.Budget("4000 per month", tdy, [monthly_deposit(4000, start=tdy+Dates.Week(1)), Growth.Deposit(100*10^3, tdy)])
-	   Growth.Budget("5000 per month", tdy, [monthly_deposit(5000, start=tdy+Dates.Week(1)), Growth.Deposit(100*10^3, tdy)])
+	   Budget("3000 per month", tdy, [monthly_deposit(3000, start=tdy+Dates.Week(1)), Deposit(100*10^3, tdy)])
+	   Budget("4000 per month", tdy, [monthly_deposit(4000, start=tdy+Dates.Week(1)), Deposit(100*10^3, tdy)])
+	   Budget("5000 per month", tdy, [monthly_deposit(5000, start=tdy+Dates.Week(1)), Deposit(100*10^3, tdy)])
 	  ]
 
 # forecast APRs
@@ -61,7 +59,7 @@ rates = [
 # plot data
 ts = range(forecastRange.start, stop=forecastRange.stop, step=Dates.Week(1))
 
-ys = reduce(hcat, [Growth.portfolio_timeline(case, ts, apr) for case in budgets, apr in rates]);
+ys = reduce(hcat, [portfolio_timeline(case, ts, apr) for case in budgets, apr in rates]);
 
 function plot(xs, ys, budget_names, rates)
 	legend_names = map(tup-> "$(tup[1]) @ $(100*tup[2])% APR", [(x,y) for x in budget_names, y in rates])

@@ -1,6 +1,9 @@
-module Growth
-
 import Dates
+
+# Types
+export Deposit, RegularDeposit, Budget
+# Methods
+export portfolio_timeline 
 
 day_per_year = 365.24219
 hour_per_day= 24
@@ -57,8 +60,4 @@ function portfolio_timeline(budget::Budget, ts::AbstractVector{Dates.DateTime}, 
 	component_growth = map(d->compound.(d, ts, apr), budget.deposits);
 	r = reduce(+, component_growth)
 	return r
-end
-
-export portfolio_timeline 
-
 end
