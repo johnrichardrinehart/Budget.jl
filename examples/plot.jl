@@ -35,23 +35,32 @@ struct ForecastTimeRange
 end
 
 tdy = Dates.today()
-defaultForecastRange = ForecastTimeRange(tdy, tdy+Dates.Year(10))
+defaultForecastRange = ForecastTimeRange(tdy, tdy+Dates.Year(20))
 
-weekly_deposit(amt::Real; start=tdy, stop=nothing) = Growth.RegularDeposit(amt, start, stop, Dates.Week(1))
-monthly_deposit(amt::Real; start=tdy, stop=nothing) = Growth.RegularDeposit(amt, start, stop, Dates.Month(1))
-yearly_deposit(amt::Real; start=tdy, stop=nothing) = Growth.RegularDeposit(amt, start, stop, Dates.Year(1))
+weekly_deposit(amt::Real; start=tdy) = Growth.RegularDeposit(amt, start, stop+Dates.Year(1000), Dates.Week(1))
+monthly_deposit(amt::Real; start=tdy) = Growth.RegularDeposit(amt, start, start+Dates.Year(1000), Dates.Month(1))
+yearly_deposit(amt::Real; start=tdy) = Growth.RegularDeposit(amt, start, stop+Dates.Year(1000), Dates.Year(1))
 
-deposit_cases = [Growth.Budget(tdy, [monthly_deposit(2000, start=tdy), Growth.Deposit(20*10^3, tdy)])]
+#budgets = [Growth.Budget(tdy, [monthly_deposit(5000, start=tdy+Dates.Month(1))])]
+budgets = [
+#	   Growth.Budget("3000 per month", tdy, [monthly_deposit(5000, start=tdy+Dates.Week(1)), Growth.Deposit(100*10^3, tdy)])
+	   Growth.Budget("4000 per month", tdy, [monthly_deposit(4000, start=tdy+Dates.Week(1)), Growth.Deposit(100*10^3, tdy)])
+	   Growth.Budget("5000 per month", tdy, [monthly_deposit(5000, start=tdy+Dates.Week(1)), Growth.Deposit(100*10^3, tdy)])
+	  ]
 
 forecastRange = defaultForecastRange;
 
-rates = range(.2, step=.2, stop=.8);
+#rates = range(.1, step=.1, stop=.1);
+rates = [
+	 .1
+	 .3
+	 .5
+	 ];
 
-N = 100
-sample_interval = (forecastRange.stop - forecastRange.start) / N;
-ts=range(forecastRange.start, stop=forecastRange.stop, step=sample_interval)
+ts = range(forecastRange.start, stop=forecastRange.stop, step=Dates.Day(1))
 
-ys = reduce(hcat, [Growth.portfolio_timeline(case, ts, apr) for case in deposit_cases, apr in rates]);
+ys = reduce(hcat, [Growth.portfolio_timeline(case, ts, apr) for case in budgets, apr in rates]);
+
 
 #   ###################################################
 #   ## Configuration File Unmarshalling
@@ -100,16 +109,25 @@ ys = reduce(hcat, [Growth.portfolio_timeline(case, ts, apr) for case in deposit_
 #   monthly_deposit_minimum=monthly_income-(monthly_expenses+monthly_expenses_flex) # underestimated monthly expenses
 #   monthly_deposit_maximum=monthly_income-(monthly_expenses-monthly_expenses_flex) # overestimated monthly expenses
 
-function plot(xs, ys, labels)
+struct Ylabel
+	value::Real
+end
+
+function plot(xs, ys, budget_names, rates)
+	print(budget_names)
 	plt = Plots.plot();
-	Plots.plot!(plt, ts, ys,
-		    size=(1800, 900),
-		    xlim=(ts[begin], ts[end]),
-		    #	    ylim=(50*10^3, 3*10^6),
-		    #label = [ (monthly, apr) -> "($(monthly), $(apr*100))" for monthly in monthlies, apr in rates],
+	Plots.plot!(plt, xs, ys,
+		    size=(2000, 1200),
+#		    yticks=map(x-> Ylabel(x), [0, 50*10^3, 1*10^6]),
+		    ticks=:native,
+		    legend=:topleft,
+		    tickfont=16,
+		    label = reshape(map(tup-> "$(tup[1]) @ $(tup[2])", [(x,y) for x in budget_names, y in rates]),1,length(budget_names)*length(rates)),
+		    #label = [ (name, apr) -> "$(name) @ $(apr*100)" for name in budget_names, apr in rates],
+#		    label = [ (name) -> "$(name) @ " for name in budget_names],
 		   );
 end
 
-plot_it = plot(ts, ys, [])
+plot_it = plot(ts, ys, map(x->x.name, budgets), rates)
 
 Printf.@printf "\nRun `plot_it` to display the plot"
